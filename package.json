@@ -1,0 +1,20 @@
+{
+  "name": "spotify-mood-webapp",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm -w -r run dev",
+    "build": "pnpm -w -r run build",
+    "start": "pnpm -w -r run start",
+    "lint": "pnpm -w -r run lint",
+    "bootstrap": "pnpm install"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.16"
+  }
+}
