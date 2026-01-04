@@ -8,117 +8,142 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String          @id @default(uuid())
+  email          String          @unique
+  passwordHash   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   spotifyAccount SpotifyAccount?
-  plays         Play[]
-  sessions      Session[]
+  plays          Play[]
+  sessions       Session[]
 }
 
 model SpotifyAccount {
-  id             String   @id @default(uuid())
-  user           User     @relation(fields: [userId], references: [id])
-  userId         String   @unique
-  spotifyUserId  String   @unique
-  accessToken    String
-  refreshToken   String
-  expiresAt      DateTime
-  scope          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  spotifyUserId String   @unique
+  accessToken   String
+  refreshToken  String
+  expiresAt     DateTime
+  scope         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Artist {
-  id               String   @id @default(uuid())
-  spotifyArtistId  String   @unique
-  name             String
-  createdAt        DateTime @default(now())
+  id              String        @id @default(uuid())
+  spotifyArtistId String        @unique
+  name            String
+  createdAt       DateTime      @default(now())
+  tracks          TrackArtist[]
 }
 
 model Track {
-  id               String   @id @default(uuid())
-  spotifyTrackId   String   @unique
-  name             String
-  albumName        String?
-  durationMs       Int?
-  primaryArtistId  String?
-  createdAt        DateTime @default(now())
-  audioFeatures    TrackAudioFeature?
-  plays            Play[]
+  id             String             @id @default(uuid())
+  spotifyTrackId String             @unique
+  name           String
+  albumName      String?
+  durationMs     Int?
+  createdAt      DateTime           @default(now())
+  audioFeatures  TrackAudioFeature?
+  plays          Play[]
+  artists        TrackArtist[]
 }
 
 model TrackArtist {
+  id       String @id @default(uuid())
   trackId  String
   artistId String
-  @@id([trackId, artistId])
+  track    Track  @relation(fields: [trackId], references: [id])
+  artist   Artist @relation(fields: [artistId], references: [id])
+
+  @@unique([trackId, artistId])
+  @@index([trackId])
+  @@index([artistId])
 }
 
 model TrackAudioFeature {
-  trackId        String   @id
-  tempo           Float?
-  energy          Float?
-  valence         Float?
-  danceability    Float?
-  acousticness    Float?
+  id               String   @id @default(uuid())
+  trackId          String   @unique
+  track            Track    @relation(fields: [trackId], references: [id])
+  tempo            Float?
+  energy           Float?
+  valence          Float?
+  danceability     Float?
+  acousticness     Float?
   instrumentalness Float?
-  loudness        Float?
-  mode            Int?
-  timeSignature   Int?
-  fetchedAt       DateTime @default(now())
+  loudness         Float?
+  mode             Int?
+  timeSignature    Int?
+  fetchedAt        DateTime @default(now())
 }
 
 model Play {
-  id         String   @id @default(uuid())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     String
-  track      Track    @relation(fields: [trackId], references: [id])
-  trackId    String
-  playedAt   DateTime
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  trackId     String
+  track       Track    @relation(fields: [trackId], references: [id])
+  playedAt    DateTime
   contextType String?
   contextName String?
-  msPlayed   Int?
-  createdAt  DateTime @default(now())
+  msPlayed    Int?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([trackId])
 }
 
 model Session {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  startTime DateTime
-  endTime   DateTime
-  createdAt DateTime @default(now())
-  plays     Play[]  @relation()
-}
+  id          String              @id @default(uuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id])
+  startTime   DateTime
+  endTime     DateTime
+  createdAt   DateTime            @default(now())
+  labels      SessionLabel?
+  predictions SessionPrediction[]
 
-model SessionPlay {
-  sessionId String
-  playId    String
-  @@id([sessionId, playId])
+  @@index([userId])
 }
 
 model SessionLabel {
-  sessionId   String   @id
-  preFocus     Int?
-  preStress    Int?
-  preEnergy    Int?
-  postFocus    Int?
-  postStress   Int?
-  postEnergy   Int?
-  note         String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String   @id @default(uuid())
+  sessionId  String   @unique
+  session    Session  @relation(fields: [sessionId], references: [id])
+  preFocus   Int?
+  preStress  Int?
+  preEnergy  Int?
+  postFocus  Int?
+  postStress Int?
+  postEnergy Int?
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model SessionPrediction {
-  id                   String   @id @default(uuid())
-  sessionId            String
-  modelVersion         String
-  predictedFocusDelta  Int?
-  predictedStressDelta Int?
-  predictedEnergyDelta Int?
+  id                    String   @id @default(uuid())
+  sessionId             String
+  session               Session  @relation(fields: [sessionId], references: [id])
+  modelVersion          String
+  predictedFocusDelta   Int?
+  predictedStressDelta  Int?
+  predictedEnergyDelta  Int?
   predictedMoodCategory String?
-  createdAt            DateTime @default(now())
+  createdAt             DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+model SessionPlay {
+  id        String   @id @default(uuid())
+  sessionId String
+  playId    String
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, playId])
+  @@index([sessionId])
+  @@index([playId])
 }
